@@ -1,9 +1,7 @@
 use pyo3::{
-    exceptions::{PyAttributeError, PyKeyError},
-    impl_::pyclass::PyMethods,
     prelude::pymodule,
     pyfunction,
-    types::{PyDict, PyFunction, PyList, PyModule, PySequence, PySet, PyString, PyTuple, PyType},
+    types::{PyDict, PyList, PyModule, PySequence, PySet, PyString, PyTuple},
     wrap_pyfunction, IntoPy, Py, PyAny, PyObject, PyResult, Python,
 };
 
@@ -62,7 +60,7 @@ fn deserialize(py: Python, value: &PyAny) -> PyResult<PyObject> {
         };
         Ok(result.into())
     } else if let Ok(mapping) = value.extract::<&PyDict>() {
-        let result = deserialize(py, mapping.into())?;
+        let result = deserialize_mapping(py, mapping.into())?;
         Ok(result.into())
     } else if let Ok(_) = value.getattr("__gyver_attrs__") {
         let mapping = make_mapping(py, value.into_py(py), None)?;
