@@ -1,6 +1,6 @@
 from gyver.attrs import define, info
 from timeit import timeit
-from gattrs_converter import make_mapping, deserialize_mapping
+from gattrs_converter import deserialize, make_mapping, deserialize_mapping
 
 
 @define
@@ -43,7 +43,6 @@ class A:
         return {"a": self.a.__parse_dict__(alias)}
 
 
-obj = A(B(C(tuple(D("other") for _ in range(10)))))
-
-print(deserialize_mapping(make_mapping(obj, True), True))
+obj = A(B(C(tuple(D("other") for _ in range(35)))))
+print(deserialize(make_mapping(obj, True)))
 print(timeit(lambda: deserialize_mapping(make_mapping(obj, True), True)))

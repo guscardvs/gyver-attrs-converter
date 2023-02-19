@@ -13,3 +13,8 @@ def deserialize_mapping(
     """Recursively unwraps the mapping resolving gyver classes,
     other mappings and sequences(list, set, tuple) internally"""
     ...
+
+def deserialize(value: Any, by_alias: bool = True) -> Mapping[str, Any]:
+    """Recursively unwraps the values resolving gyver classes,
+    other mappings and sequences(list, set, tuple) internally"""
+    ...
