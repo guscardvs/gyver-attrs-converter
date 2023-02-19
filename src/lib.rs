@@ -6,7 +6,7 @@ use pyo3::{
 };
 
 #[pyfunction]
-#[pyo3(signature = (obj, by_alias = true))]
+#[pyo3(signature = (obj, by_alias = false))]
 fn make_mapping(py: Python, obj: PyObject, by_alias: Option<bool>) -> PyResult<Py<PyDict>> {
     let gyver_attrs = match obj.getattr(py, "__gyver_attrs__") {
         Ok(x) => x.extract::<Py<PyDict>>(py)?,
@@ -32,27 +32,27 @@ fn make_mapping(py: Python, obj: PyObject, by_alias: Option<bool>) -> PyResult<P
     Ok(result.into())
 }
 
-fn deserialize(py: Python, value: &PyAny) -> PyResult<PyObject> {
+fn deserialize(py: Python, value: &PyAny, should_alias: bool) -> PyResult<PyObject> {
     if let Ok(parser) = value.getattr("__parse_dict__") {
-        let result = parser.call0()?;
+        let result = parser.call1((should_alias,))?;
         Ok(result.into())
     } else if let Ok(sequence) = value.extract::<&PySequence>() {
         let result: &PyAny = if sequence.is_instance_of::<PyList>()? {
             let items = sequence
                 .iter()?
-                .map(|item| deserialize(py, item.unwrap()))
+                .map(|item| deserialize(py, item.unwrap(), should_alias))
                 .collect::<PyResult<Vec<_>>>()?;
             PyList::new(py, items)
         } else if sequence.is_instance_of::<PyTuple>()? {
             let items = sequence
                 .iter()?
-                .map(|item| deserialize(py, item.unwrap()))
+                .map(|item| deserialize(py, item.unwrap(), should_alias))
                 .collect::<PyResult<Vec<_>>>()?;
             PyTuple::new(py, items)
         } else if sequence.is_instance_of::<PySet>()? {
             let items = sequence
                 .iter()?
-                .map(|item| deserialize(py, item?))
+                .map(|item| deserialize(py, item?, should_alias))
                 .collect::<PyResult<Vec<_>>>()?;
             PySet::new(py, items.as_slice()).unwrap()
         } else {
@@ -60,22 +60,27 @@ fn deserialize(py: Python, value: &PyAny) -> PyResult<PyObject> {
         };
         Ok(result.into())
     } else if let Ok(mapping) = value.extract::<&PyDict>() {
-        let result = deserialize_mapping(py, mapping.into())?;
+        let result = deserialize_mapping(py, mapping.into(), Some(should_alias))?;
         Ok(result.into())
     } else if let Ok(_) = value.getattr("__gyver_attrs__") {
-        let mapping = make_mapping(py, value.into_py(py), None)?;
-        let result = deserialize(py, mapping.extract(py)?)?;
+        let mapping = make_mapping(py, value.into_py(py), Some(should_alias))?;
+        let result = deserialize(py, mapping.extract(py)?, should_alias)?;
         Ok(result.into())
     } else {
         Ok(value.into())
     }
 }
 #[pyfunction]
-fn deserialize_mapping(py: Python, mapping: &PyDict) -> PyResult<Py<PyDict>> {
+fn deserialize_mapping(
+    py: Python,
+    mapping: &PyDict,
+    by_alias: Option<bool>,
+) -> PyResult<Py<PyDict>> {
     let result = PyDict::new(py);
+    let should_alias = by_alias.unwrap_or(false);
 
     for (key, value) in mapping.iter() {
-        let unwrapped = deserialize(py, value)?;
+        let unwrapped = deserialize(py, value, should_alias)?;
         result.set_item(key, unwrapped)?;
     }
 
