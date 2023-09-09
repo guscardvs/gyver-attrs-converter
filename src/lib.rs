@@ -13,6 +13,10 @@ fn make_mapping(py: Python, obj: PyObject, by_alias: Option<bool>) -> PyResult<P
         Err(err) => return Err(err),
     };
     let should_alias = by_alias.unwrap_or(false);
+    if let Ok(parser) = obj.getattr(py, "__parse_dict__") {
+        let result = parser.call1((by_alias,))?;
+        return OK(result.into());
+    }
     let result = PyDict::new(py);
 
     Python::with_gil(|py| {
