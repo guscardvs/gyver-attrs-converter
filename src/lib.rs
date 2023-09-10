@@ -14,8 +14,9 @@ fn make_mapping(py: Python, obj: PyObject, by_alias: Option<bool>) -> PyResult<P
     };
     let should_alias = by_alias.unwrap_or(false);
     if let Ok(parser) = obj.getattr(py, "__parse_dict__") {
-        let result = parser.call1((by_alias,))?;
-        return OK(result.into());
+        let output = parser.call1(py, (by_alias,))?;
+        let result = output.downcast::<PyDict>(py);
+        return Ok(result?.into());
     }
     let result = PyDict::new(py);
 
