@@ -1,6 +1,6 @@
 #!/bin/sh
 
-versions=("3.9" "3.10" "3.11")
+versions=("3.9" "3.10" "3.11" "3.12")
 compat=("musllinux_1_1" "manylinux_2_17" "manylinux_2_28" "manylinux_2_34")
 target="x86_64-unknown-linux-gnu"
 
